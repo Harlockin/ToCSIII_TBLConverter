@@ -69,12 +69,23 @@ namespace ToCSIII_TBLConverter
         }
 
         /// <summary>
+        /// Generate the header for unprocessed objects in a CSV formatted string.
+        /// </summary>
+        /// <returns>The header.</returns>
+        public static string GetObjectHeader()
+        {
+            string header = "Type,Unknows";
+
+            return header;
+        }
+
+        /// <summary>
         /// Generate the item and item_q header in a CSV formatted string.
         /// </summary>
         /// <returns>The header.</returns>
         public static string GetItemHeader()
         {
-            string header = "Type,ID,Name,Desc,Icon,Price,MaxQty" +
+            string header = "Type,ID,Name,Desc,Category,Price,MaxQty" +
                             ",Effect1,E1 Param1,E1 Param2,E1 Param3" +
                             ",Effect2,E2 Param1,E2 Param2,E2 Param3" +
                             ",Effect3,E3 Param1,E3 Param2,E3 Param3" +
@@ -85,6 +96,25 @@ namespace ToCSIII_TBLConverter
                             ",WeaponPierce,WeaponThrust,WeaponStrike" +
                             ",T.Type,T.Range,T.Size,Char,Flags" +
                             ",Unknows";
+
+            return header;
+        }
+
+        /// <summary>
+        /// Generate the magic and magic, magicbo and btcalc header in a CSV formatted string.
+        /// </summary>
+        /// <returns>The header.</returns>
+        public static string GetMagicHeader()
+        {
+            string header = "Type,ID,Char,Flags,Category,Type,Element" +
+                            ",WeaponSwitch,T.Type,T.Range,T.Size,Unknow,,Unknow,Unknow," +
+                            ",Effect1,E1 Param1,E1 Param2,E1 Param3" +
+                            ",Effect2,E2 Param1,E2 Param2,E2 Param3" +
+                            ",Effect3,E3 Param1,E3 Param2,E3 Param3" +
+                            ",Effect4,E4 Param1,E4 Param2,E4 Param3" +
+                            ",Effect5,E5 Param1,E5 Param2,E5 Param3" +
+                            ",Cast,Delay,Cost,Unbalance,Break,Level," +
+                            ",Order,Unknow,Animation,Name,Desc";
 
             return header;
         }

@@ -19,7 +19,7 @@ namespace ToCSIII_TBLConverter
         private short id;
         private short characterRestriction;
         private string flags;
-        private short iconId;
+        private short category;
         private short unknowShort;
         private byte element;
         private byte weaponSwitchable;
@@ -46,14 +46,6 @@ namespace ToCSIII_TBLConverter
         /// <summary>
         /// Initializes a new instance of the <see cref="Item"/> class.
         /// </summary>
-        public Item()
-        {
-            // TODO.
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="Item"/> class.
-        /// </summary>
         /// <param name="t_data">An array of byte containing an unprocessed Item.</param>
         public Item(byte[] t_data)
         {
@@ -67,7 +59,7 @@ namespace ToCSIII_TBLConverter
                 this.id = br.ReadInt16();
                 this.characterRestriction = br.ReadInt16();
                 this.flags = Helper.ReadNullTerminatedString(br);
-                this.iconId = br.ReadInt16();
+                this.category = br.ReadInt16();
                 this.unknowShort = br.ReadInt16();
                 this.element = br.ReadByte();
                 this.weaponSwitchable = br.ReadByte();
@@ -110,55 +102,55 @@ namespace ToCSIII_TBLConverter
         /// <summary>
         /// Initializes a new instance of the <see cref="Item"/> class.
         /// </summary>
-        /// <param name="t_data">A string array containing an Item.</param>
-        public Item(string[] t_data)
+        /// <param name="t_string">A string array containing an Item.</param>
+        public Item(string[] t_string)
         {
             this.unknow12bytes = new byte[12];
             this.effects = new Effect[Helper.MaxItemEffects];
             this.stats = new short[10];
             this.unknow8bytes = new byte[8];
 
-            this.id = short.Parse(t_data[1]);
-            this.name = t_data[2].Replace("\\n", "\n");
-            this.desc = t_data[3].Replace("\\n", "\n");
-            this.iconId = short.Parse(t_data[4]);
-            this.price = int.Parse(t_data[5]);
-            this.stackMax = byte.Parse(t_data[6]);
+            this.id = short.Parse(t_string[1]);
+            this.name = t_string[2].Replace("\\n", "\n");
+            this.desc = t_string[3].Replace("\\n", "\n");
+            this.category = short.Parse(t_string[4]);
+            this.price = int.Parse(t_string[5]);
+            this.stackMax = byte.Parse(t_string[6]);
 
             for (var i = 0; i < Helper.MaxItemEffects; i++)
             {
-                this.effects[i] = new Effect(short.Parse(t_data[7 + (4 * i)]), int.Parse(t_data[8 + (4 * i)]), int.Parse(t_data[9 + (4 * i)]), int.Parse(t_data[10 + (4 * i)]));
+                this.effects[i] = new Effect(short.Parse(t_string[7 + (4 * i)]), int.Parse(t_string[8 + (4 * i)]), int.Parse(t_string[9 + (4 * i)]), int.Parse(t_string[10 + (4 * i)]));
             }
 
             // 26
             for (var i = 0; i < 10; i++)
             {
-                this.stats[i] = short.Parse(t_data[27 + i]);
+                this.stats[i] = short.Parse(t_string[27 + i]);
             }
 
             // 36
-            this.rank = short.Parse(t_data[37]);
-            this.element = byte.Parse(t_data[38]);
-            this.weaponSwitchable = byte.Parse(t_data[39]);
-            this.weaponSlash = byte.Parse(t_data[40]);
-            this.weaponPierce = byte.Parse(t_data[41]);
-            this.weaponThrust = byte.Parse(t_data[42]);
-            this.weaponStrike = byte.Parse(t_data[43]);
-            this.targetType = byte.Parse(t_data[44]);
-            this.targetRange = float.Parse(t_data[45]);
-            this.targetSize = byte.Parse(t_data[46]);
-            this.characterRestriction = short.Parse(t_data[47]);
-            this.flags = t_data[48];
+            this.rank = short.Parse(t_string[37]);
+            this.element = byte.Parse(t_string[38]);
+            this.weaponSwitchable = byte.Parse(t_string[39]);
+            this.weaponSlash = byte.Parse(t_string[40]);
+            this.weaponPierce = byte.Parse(t_string[41]);
+            this.weaponThrust = byte.Parse(t_string[42]);
+            this.weaponStrike = byte.Parse(t_string[43]);
+            this.targetType = byte.Parse(t_string[44]);
+            this.targetRange = float.Parse(t_string[45]);
+            this.targetSize = byte.Parse(t_string[46]);
+            this.characterRestriction = short.Parse(t_string[47]);
+            this.flags = t_string[48];
 
-            this.unknowShort = short.Parse(t_data[49]);
-            this.unknow12bytes = Helper.StringToByteArray(t_data[50].Replace(" ", string.Empty));
-            this.unknow8bytes = Helper.StringToByteArray(t_data[51].Replace(" ", string.Empty));
+            this.unknowShort = short.Parse(t_string[49]);
+            this.unknow12bytes = Helper.StringToByteArray(t_string[50].Replace(" ", string.Empty));
+            this.unknow8bytes = Helper.StringToByteArray(t_string[51].Replace(" ", string.Empty));
 
-            if (t_data[0] == "item_q")
+            if (t_string[0] == "item_q")
             {
-                this.unknowQuartzShort1 = short.Parse(t_data[52]);
-                this.unknowQuartzShort2 = short.Parse(t_data[53]);
-                this.unknowQuartzShort3 = short.Parse(t_data[54]);
+                this.unknowQuartzShort1 = short.Parse(t_string[52]);
+                this.unknowQuartzShort2 = short.Parse(t_string[53]);
+                this.unknowQuartzShort3 = short.Parse(t_string[54]);
             }
         }
 
@@ -173,7 +165,7 @@ namespace ToCSIII_TBLConverter
             line += "," + this.id.ToString();
             line += "," + '"' + this.name.Replace("\n", "\\n") + '"';
             line += "," + '"' + this.desc.Replace("\n", "\\n") + '"';
-            line += "," + this.iconId.ToString();
+            line += "," + this.category.ToString();
             line += "," + this.price.ToString();
             line += "," + this.stackMax.ToString();
 
@@ -231,7 +223,7 @@ namespace ToCSIII_TBLConverter
                     writer.Write(this.id);
                     writer.Write(this.characterRestriction);
                     writer.Write(UTF8Encoding.UTF8.GetBytes(this.flags + "\0"));
-                    writer.Write(this.iconId);
+                    writer.Write(this.category);
                     writer.Write(this.unknowShort);
                     writer.Write(this.element);
                     writer.Write(this.weaponSwitchable);

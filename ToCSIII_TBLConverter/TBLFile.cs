@@ -21,6 +21,8 @@ namespace ToCSIII_TBLConverter
         private short keyCount;
         private Dictionary<string, short> keys;
         private Dictionary<string, List<Item>> items;
+        private Dictionary<string, List<GenericObject>> objects;
+        private Dictionary<string, List<Magic>> magics;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="TBLFile"/> class.
@@ -33,6 +35,7 @@ namespace ToCSIII_TBLConverter
             this.keys = new Dictionary<string, short>();
 
             this.items = new Dictionary<string, List<Item>>();
+            this.objects = new Dictionary<string, List<GenericObject>>();
         }
 
         /// <summary>
@@ -46,6 +49,8 @@ namespace ToCSIII_TBLConverter
 
             this.keys = new Dictionary<string, short>();
             this.items = new Dictionary<string, List<Item>>();
+            this.objects = new Dictionary<string, List<GenericObject>>();
+            this.magics = new Dictionary<string, List<Magic>>();
 
             // read HEADER
             this.objectCount = t_binaryReader.ReadInt16();
@@ -68,13 +73,38 @@ namespace ToCSIII_TBLConverter
                 string key = Helper.ReadNullTerminatedString(t_binaryReader);
                 short object_size = t_binaryReader.ReadInt16();
 
-                if (this.items.ContainsKey(key))
+                if (key == "item" || key == "item_q")
                 {
-                    this.items[key].Add(new Item(t_binaryReader.ReadBytes(object_size)));
+                    if (this.items.ContainsKey(key))
+                    {
+                        this.items[key].Add(new Item(t_binaryReader.ReadBytes(object_size)));
+                    }
+                    else
+                    {
+                        this.items[key] = new List<Item> { new Item(t_binaryReader.ReadBytes(object_size)) };
+                    }
+                }
+                else if (key == "magic")
+                {
+                    if (this.magics.ContainsKey(key))
+                    {
+                        this.magics[key].Add(new Magic(t_binaryReader.ReadBytes(object_size)));
+                    }
+                    else
+                    {
+                        this.magics[key] = new List<Magic> { new Magic(t_binaryReader.ReadBytes(object_size)) };
+                    }
                 }
                 else
                 {
-                    this.items[key] = new List<Item> { new Item(t_binaryReader.ReadBytes(object_size)) };
+                    if (this.objects.ContainsKey(key))
+                    {
+                        this.objects[key].Add(new GenericObject(t_binaryReader.ReadBytes(object_size)));
+                    }
+                    else
+                    {
+                        this.objects[key] = new List<GenericObject> { new GenericObject(t_binaryReader.ReadBytes(object_size)) };
+                    }
                 }
             }
         }
@@ -90,6 +120,8 @@ namespace ToCSIII_TBLConverter
 
             this.keys = new Dictionary<string, short>();
             this.items = new Dictionary<string, List<Item>>();
+            this.magics = new Dictionary<string, List<Magic>>();
+            this.objects = new Dictionary<string, List<GenericObject>>();
 
             using (TextFieldParser csvParser = new TextFieldParser(t_path, System.Text.Encoding.UTF8))
             {
@@ -109,16 +141,47 @@ namespace ToCSIII_TBLConverter
                     {
                         string[] fields = csvParser.ReadFields();
 
-                        if (this.items.ContainsKey(fields[0]))
+                        if (fields[0] == "item" || fields[0] == "item_q")
                         {
-                            this.keys[fields[0]] += 1;
-                            this.items[fields[0]].Add(new Item(fields));
+                            if (this.items.ContainsKey(fields[0]))
+                            {
+                                this.keys[fields[0]] += 1;
+                                this.items[fields[0]].Add(new Item(fields));
+                            }
+                            else
+                            {
+                                this.keyCount++;
+                                this.keys.Add(fields[0], 1);
+                                this.items[fields[0]] = new List<Item> { new Item(fields) };
+                            }
+                        }
+                        else if (fields[0] == "magic")
+                        {
+                            if (this.magics.ContainsKey(fields[0]))
+                            {
+                                this.keys[fields[0]] += 1;
+                                this.magics[fields[0]].Add(new Magic(fields));
+                            }
+                            else
+                            {
+                                this.keyCount++;
+                                this.keys.Add(fields[0], 1);
+                                this.magics[fields[0]] = new List<Magic> { new Magic(fields) };
+                            }
                         }
                         else
                         {
-                            this.keyCount++;
-                            this.keys.Add(fields[0], 1);
-                            this.items[fields[0]] = new List<Item> { new Item(fields) };
+                            if (this.objects.ContainsKey(fields[0]))
+                            {
+                                this.keys[fields[0]] += 1;
+                                this.objects[fields[0]].Add(new GenericObject(fields));
+                            }
+                            else
+                            {
+                                this.keyCount++;
+                                this.keys.Add(fields[0], 1);
+                                this.objects[fields[0]] = new List<GenericObject> { new GenericObject(fields) };
+                            }
                         }
                     }
                     catch (MalformedLineException ex)
@@ -139,7 +202,7 @@ namespace ToCSIII_TBLConverter
 
             using (var file = File.CreateText(path))
             {
-                if (this.keys.ContainsKey("item"))
+                if (this.items.Count > 0)
                 {
                     file.WriteLine(Helper.GetItemHeader());
 
@@ -149,6 +212,32 @@ namespace ToCSIII_TBLConverter
                         foreach (var item in key.Value)
                         {
                             file.WriteLine(key.Key + item.ToCSVString());
+                        }
+                    }
+                }
+
+                if (this.magics.Count > 0)
+                {
+                    file.WriteLine(Helper.GetMagicHeader());
+
+                    // we list each object
+                    foreach (var key in this.magics)
+                    {
+                        foreach (var magic in key.Value)
+                        {
+                            file.WriteLine(key.Key + magic.ToCSVString());
+                        }
+                    }
+                }
+
+                if (this.objects.Count > 0)
+                {
+                    // we list each object
+                    foreach (var key in this.objects)
+                    {
+                        foreach (var o in key.Value)
+                        {
+                            file.WriteLine(key.Key + o.ToCSVString());
                         }
 
                         file.WriteLine(string.Empty);
@@ -184,13 +273,43 @@ namespace ToCSIII_TBLConverter
                     writer.Write(ushort.MinValue);
                 }
 
-                // Write object list
-                foreach (var key in this.items)
+                if (this.items.Count > 0)
                 {
-                    foreach (var item in key.Value)
+                    // Write object list
+                    foreach (var key in this.items)
                     {
-                        writer.Write(UTF8Encoding.UTF8.GetBytes(key.Key + "\0"));
-                        writer.Write(item.ToByteArray());
+                        foreach (var item in key.Value)
+                        {
+                            writer.Write(UTF8Encoding.UTF8.GetBytes(key.Key + "\0"));
+                            writer.Write(item.ToByteArray());
+                        }
+                    }
+                }
+
+                if (this.magics.Count > 0)
+                {
+                    // Write object list
+                    foreach (var key in this.magics)
+                    {
+                        foreach (var m in key.Value)
+                        {
+                            writer.Write(UTF8Encoding.UTF8.GetBytes(key.Key + "\0"));
+                            writer.Write(m.ToByteArray());
+                        }
+                    }
+                }
+                
+                if (this.objects.Count > 0)
+                {
+                    // Write object list
+                    foreach (var key in this.objects)
+                    {
+                        foreach (var o in key.Value)
+                        {
+                            writer.Write(UTF8Encoding.UTF8.GetBytes(key.Key + "\0"));
+                            writer.Write((short)o.ToByteArray().Length);
+                            writer.Write(o.ToByteArray());
+                        }
                     }
                 }
 
