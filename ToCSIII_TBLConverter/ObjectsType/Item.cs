@@ -8,40 +8,41 @@ namespace ToCSIII_TBLConverter
 {
     using System;
     using System.IO;
-    using System.Linq;
     using System.Text;
 
     /// <summary>
     /// Provide the structure and some utilities for the 'item' and 'item_q' objects.
     /// </summary>
-    public class Item
+    public class Item : ToCSIII_TBLConverter.Object
     {
-        private short id;
-        private short characterRestriction;
-        private string flags;
-        private short category;
-        private short unknowShort;
-        private byte element;
-        private byte weaponSwitchable;
-        private byte weaponSlash;
-        private byte weaponPierce;
-        private byte weaponThrust;
-        private byte weaponStrike;
-        private byte targetType;
-        private float targetRange;
-        private byte targetSize;
-        private byte[] unknow12bytes;
-        private Effect[] effects;
-        private short[] stats;
-        private int price;
-        private byte stackMax;
-        private short rank;
-        private string name;
-        private string desc;
-        private byte[] unknow8bytes;
-        private short unknowQuartzShort1;
-        private short unknowQuartzShort2;
-        private short unknowQuartzShort3;
+        protected short characterRestriction;
+        protected string flags;
+        protected short category;
+        protected short unknowShort;
+        protected byte element;
+        protected byte weaponSwitchable;
+        protected byte weaponSlash;
+        protected byte weaponPierce;
+        protected byte weaponThrust;
+        protected byte weaponStrike;
+        protected byte targetType;
+        protected float targetRange;
+        protected byte targetSize;
+        protected byte[] unknow12bytes;
+        protected Effect[] effects;
+        protected short[] stats;
+        protected int price;
+        protected byte stackMax;
+        protected short rank;
+        protected string name;
+        protected byte[] unknow8bytes;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Item"/> class.
+        /// </summary>
+        public Item() : base()
+        {
+        }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Item"/> class.
@@ -89,13 +90,6 @@ namespace ToCSIII_TBLConverter
                 this.name = Helper.ReadNullTerminatedString(br);
                 this.desc = Helper.ReadNullTerminatedString(br);
                 this.unknow8bytes = br.ReadBytes(8);
-
-                if (br.BaseStream.Length > br.BaseStream.Position)
-                {
-                    this.unknowQuartzShort1 = br.ReadInt16();
-                    this.unknowQuartzShort2 = br.ReadInt16();
-                    this.unknowQuartzShort3 = br.ReadInt16();
-                }
             }
         }
 
@@ -145,20 +139,13 @@ namespace ToCSIII_TBLConverter
             this.unknowShort = short.Parse(t_string[49]);
             this.unknow12bytes = Helper.StringToByteArray(t_string[50].Replace(" ", string.Empty));
             this.unknow8bytes = Helper.StringToByteArray(t_string[51].Replace(" ", string.Empty));
-
-            if (t_string[0] == "item_q")
-            {
-                this.unknowQuartzShort1 = short.Parse(t_string[52]);
-                this.unknowQuartzShort2 = short.Parse(t_string[53]);
-                this.unknowQuartzShort3 = short.Parse(t_string[54]);
-            }
         }
 
         /// <summary>
         /// Write the current Item to a CSV formatted string.
         /// </summary>
         /// <returns>The CSV formatted string.</returns>
-        public string ToCSVString()
+        public override string ToCSVString()
         {
             string line = string.Empty;
 
@@ -197,13 +184,6 @@ namespace ToCSIII_TBLConverter
             line += "," + Helper.ByteArrayToString(this.unknow12bytes);
             line += "," + Helper.ByteArrayToString(this.unknow8bytes);
 
-            if (this.unknow8bytes.Any(singleByte => singleByte != 0))
-            {
-                line += "," + this.unknowQuartzShort1.ToString();
-                line += "," + this.unknowQuartzShort2.ToString();
-                line += "," + this.unknowQuartzShort3.ToString();
-            }
-
             return line;
         }
 
@@ -211,7 +191,7 @@ namespace ToCSIII_TBLConverter
         /// Write the current Item to an array of bytes.
         /// </summary>
         /// <returns>The CSV formatted string.</returns>
-        public byte[] ToByteArray()
+        public override byte[] ToByteArray()
         {
             byte[] array = new byte[23947];
 
@@ -253,16 +233,6 @@ namespace ToCSIII_TBLConverter
                     writer.Write(UTF8Encoding.UTF8.GetBytes(this.name + "\0"));
                     writer.Write(UTF8Encoding.UTF8.GetBytes(this.desc + "\0"));
                     writer.Write(this.unknow8bytes);
-
-                    if (this.unknow8bytes.Any(singleByte => singleByte != 0))
-                    {
-                        writer.Write(this.unknowQuartzShort1);
-                        writer.Write(this.unknowQuartzShort2);
-                        writer.Write(this.unknowQuartzShort3);
-                        writer.Write(ushort.MaxValue);
-                        writer.Write(ushort.MaxValue);
-                        writer.Write(ushort.MaxValue);
-                    }
 
                     writer.BaseStream.Position = 0;
                     writer.Write((short)(writer.BaseStream.Length - 2));

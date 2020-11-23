@@ -20,9 +20,8 @@ namespace ToCSIII_TBLConverter
         private short objectCount;
         private short keyCount;
         private Dictionary<string, short> keys;
-        private Dictionary<string, List<Item>> items;
-        private Dictionary<string, List<GenericObject>> objects;
-        private Dictionary<string, List<Magic>> magics;
+        private Dictionary<string, List<ToCSIII_TBLConverter.Object>> objects;
+        private Dictionary<string, List<UnhandledObject>> unhandledObjects;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="TBLFile"/> class.
@@ -33,9 +32,8 @@ namespace ToCSIII_TBLConverter
             this.keyCount = 0;
 
             this.keys = new Dictionary<string, short>();
-
-            this.items = new Dictionary<string, List<Item>>();
-            this.objects = new Dictionary<string, List<GenericObject>>();
+            this.objects = new Dictionary<string, List<Object>>();
+            this.unhandledObjects = new Dictionary<string, List<UnhandledObject>>();
         }
 
         /// <summary>
@@ -48,9 +46,8 @@ namespace ToCSIII_TBLConverter
             this.keyCount = 0;
 
             this.keys = new Dictionary<string, short>();
-            this.items = new Dictionary<string, List<Item>>();
-            this.objects = new Dictionary<string, List<GenericObject>>();
-            this.magics = new Dictionary<string, List<Magic>>();
+            this.objects = new Dictionary<string, List<Object>>();
+            this.unhandledObjects = new Dictionary<string, List<UnhandledObject>>();
 
             // read HEADER
             this.objectCount = t_binaryReader.ReadInt16();
@@ -62,7 +59,7 @@ namespace ToCSIII_TBLConverter
             {
                 this.keys.Add(
                         Helper.ReadNullTerminatedString(t_binaryReader), // key
-                        t_binaryReader.ReadInt16());                      // number of objects with this key
+                        t_binaryReader.ReadInt16());                     // number of objects with this key
 
                 t_binaryReader.ReadInt16();
             }
@@ -73,37 +70,70 @@ namespace ToCSIII_TBLConverter
                 string key = Helper.ReadNullTerminatedString(t_binaryReader);
                 short object_size = t_binaryReader.ReadInt16();
 
-                if (key == "item" || key == "item_q")
+                if (key == "item")
                 {
-                    if (this.items.ContainsKey(key))
+                    if (this.objects.ContainsKey(key))
                     {
-                        this.items[key].Add(new Item(t_binaryReader.ReadBytes(object_size)));
+                        this.objects[key].Add(new Item(t_binaryReader.ReadBytes(object_size)));
                     }
                     else
                     {
-                        this.items[key] = new List<Item> { new Item(t_binaryReader.ReadBytes(object_size)) };
+                        this.objects[key] = new List<Object> { new Item(t_binaryReader.ReadBytes(object_size)) };
+                    }
+                }
+                else if (key == "item_q")
+                {
+                    if (this.objects.ContainsKey(key))
+                    {
+                        this.objects[key].Add(new ItemQuartz(t_binaryReader.ReadBytes(object_size)));
+                    }
+                    else
+                    {
+                        this.objects[key] = new List<Object> { new ItemQuartz(t_binaryReader.ReadBytes(object_size)) };
                     }
                 }
                 else if (key == "magic")
                 {
-                    if (this.magics.ContainsKey(key))
+                    if (this.objects.ContainsKey(key))
                     {
-                        this.magics[key].Add(new Magic(t_binaryReader.ReadBytes(object_size)));
+                        this.objects[key].Add(new Magic(t_binaryReader.ReadBytes(object_size)));
                     }
                     else
                     {
-                        this.magics[key] = new List<Magic> { new Magic(t_binaryReader.ReadBytes(object_size)) };
+                        this.objects[key] = new List<Object> { new Magic(t_binaryReader.ReadBytes(object_size)) };
+                    }
+                }
+                else if (key == "ItemHelpData")
+                {
+                    if (this.objects.ContainsKey(key))
+                    {
+                        this.objects[key].Add(new ItemHelpData(t_binaryReader.ReadBytes(object_size)));
+                    }
+                    else
+                    {
+                        this.objects[key] = new List<Object> { new ItemHelpData(t_binaryReader.ReadBytes(object_size)) };
+                    }
+                }
+                else if (key == "CompHelpData")
+                {
+                    if (this.objects.ContainsKey(key))
+                    {
+                        this.objects[key].Add(new CompHelpData(t_binaryReader.ReadBytes(object_size)));
+                    }
+                    else
+                    {
+                        this.objects[key] = new List<Object> { new CompHelpData(t_binaryReader.ReadBytes(object_size)) };
                     }
                 }
                 else
                 {
-                    if (this.objects.ContainsKey(key))
+                    if (this.unhandledObjects.ContainsKey(key))
                     {
-                        this.objects[key].Add(new GenericObject(t_binaryReader.ReadBytes(object_size)));
+                        this.unhandledObjects[key].Add(new UnhandledObject(t_binaryReader.ReadBytes(object_size)));
                     }
                     else
                     {
-                        this.objects[key] = new List<GenericObject> { new GenericObject(t_binaryReader.ReadBytes(object_size)) };
+                        this.unhandledObjects[key] = new List<UnhandledObject> { new UnhandledObject(t_binaryReader.ReadBytes(object_size)) };
                     }
                 }
             }
@@ -119,9 +149,8 @@ namespace ToCSIII_TBLConverter
             this.keyCount = 0;
 
             this.keys = new Dictionary<string, short>();
-            this.items = new Dictionary<string, List<Item>>();
-            this.magics = new Dictionary<string, List<Magic>>();
-            this.objects = new Dictionary<string, List<GenericObject>>();
+            this.objects = new Dictionary<string, List<Object>>();
+            this.unhandledObjects = new Dictionary<string, List<UnhandledObject>>();
 
             using (TextFieldParser csvParser = new TextFieldParser(t_path, System.Text.Encoding.UTF8))
             {
@@ -141,46 +170,88 @@ namespace ToCSIII_TBLConverter
                     {
                         string[] fields = csvParser.ReadFields();
 
-                        if (fields[0] == "item" || fields[0] == "item_q")
-                        {
-                            if (this.items.ContainsKey(fields[0]))
-                            {
-                                this.keys[fields[0]] += 1;
-                                this.items[fields[0]].Add(new Item(fields));
-                            }
-                            else
-                            {
-                                this.keyCount++;
-                                this.keys.Add(fields[0], 1);
-                                this.items[fields[0]] = new List<Item> { new Item(fields) };
-                            }
-                        }
-                        else if (fields[0] == "magic")
-                        {
-                            if (this.magics.ContainsKey(fields[0]))
-                            {
-                                this.keys[fields[0]] += 1;
-                                this.magics[fields[0]].Add(new Magic(fields));
-                            }
-                            else
-                            {
-                                this.keyCount++;
-                                this.keys.Add(fields[0], 1);
-                                this.magics[fields[0]] = new List<Magic> { new Magic(fields) };
-                            }
-                        }
-                        else
+                        if (fields[0] == "item")
                         {
                             if (this.objects.ContainsKey(fields[0]))
                             {
                                 this.keys[fields[0]] += 1;
-                                this.objects[fields[0]].Add(new GenericObject(fields));
+                                this.objects[fields[0]].Add(new Item(fields));
                             }
                             else
                             {
                                 this.keyCount++;
                                 this.keys.Add(fields[0], 1);
-                                this.objects[fields[0]] = new List<GenericObject> { new GenericObject(fields) };
+                                this.objects[fields[0]] = new List<Object> { new Item(fields) };
+                            }
+                        }
+                        else if (fields[0] == "item_q")
+                        {
+                            if (this.objects.ContainsKey(fields[0]))
+                            {
+                                this.keys[fields[0]] += 1;
+                                this.objects[fields[0]].Add(new ItemQuartz(fields));
+                            }
+                            else
+                            {
+                                this.keyCount++;
+                                this.keys.Add(fields[0], 1);
+                                this.objects[fields[0]] = new List<Object> { new ItemQuartz(fields) };
+                            }
+                        }
+                        else if (fields[0] == "magic")
+                        {
+                            if (this.objects.ContainsKey(fields[0]))
+                            {
+                                this.keys[fields[0]] += 1;
+                                this.objects[fields[0]].Add(new Magic(fields));
+                            }
+                            else
+                            {
+                                this.keyCount++;
+                                this.keys.Add(fields[0], 1);
+                                this.objects[fields[0]] = new List<Object> { new Magic(fields) };
+                            }
+                        }
+                        else if (fields[0] == "ItemHelpData")
+                        {
+                            if (this.objects.ContainsKey(fields[0]))
+                            {
+                                this.keys[fields[0]] += 1;
+                                this.objects[fields[0]].Add(new ItemHelpData(fields));
+                            }
+                            else
+                            {
+                                this.keyCount++;
+                                this.keys.Add(fields[0], 1);
+                                this.objects[fields[0]] = new List<Object> { new ItemHelpData(fields) };
+                            }
+                        }
+                        else if (fields[0] == "CompHelpData")
+                        {
+                            if (this.objects.ContainsKey(fields[0]))
+                            {
+                                this.keys[fields[0]] += 1;
+                                this.objects[fields[0]].Add(new CompHelpData(fields));
+                            }
+                            else
+                            {
+                                this.keyCount++;
+                                this.keys.Add(fields[0], 1);
+                                this.objects[fields[0]] = new List<Object> { new CompHelpData(fields) };
+                            }
+                        }
+                        else
+                        {
+                            if (this.unhandledObjects.ContainsKey(fields[0]))
+                            {
+                                this.keys[fields[0]] += 1;
+                                this.unhandledObjects[fields[0]].Add(new UnhandledObject(fields));
+                            }
+                            else
+                            {
+                                this.keyCount++;
+                                this.keys.Add(fields[0], 1);
+                                this.unhandledObjects[fields[0]] = new List<UnhandledObject> { new UnhandledObject(fields) };
                             }
                         }
                     }
@@ -202,45 +273,76 @@ namespace ToCSIII_TBLConverter
 
             using (var file = File.CreateText(path))
             {
-                if (this.items.Count > 0)
+                if (this.objects.ContainsKey("item"))
                 {
                     file.WriteLine(Helper.GetItemHeader());
 
                     // we list each object
-                    foreach (var key in this.items)
+                    foreach (var key in this.objects)
                     {
-                        foreach (var item in key.Value)
+                        foreach (var @object in key.Value)
                         {
-                            file.WriteLine(key.Key + item.ToCSVString());
+                            if (key.Key == "item")
+                            {
+                                var item = @object as Item;
+                                file.WriteLine(key.Key + item.ToCSVString());
+                            }
+                            else if (key.Key == "item_q")
+                            {
+                                var itemQuartz = @object as ItemQuartz;
+                                file.WriteLine(key.Key + itemQuartz.ToCSVString());
+                            }
                         }
                     }
                 }
 
-                if (this.magics.Count > 0)
+                if (this.objects.ContainsKey("magic"))
                 {
                     file.WriteLine(Helper.GetMagicHeader());
 
                     // we list each object
-                    foreach (var key in this.magics)
+                    foreach (var key in this.objects)
                     {
-                        foreach (var magic in key.Value)
+                        foreach (var @object in key.Value)
                         {
+                            var magic = @object as Magic;
                             file.WriteLine(key.Key + magic.ToCSVString());
                         }
                     }
                 }
 
-                if (this.objects.Count > 0)
+                if (this.objects.ContainsKey("ItemHelpData"))
                 {
+                    file.WriteLine(Helper.GetHelpDataHeader());
+
                     // we list each object
                     foreach (var key in this.objects)
                     {
-                        foreach (var o in key.Value)
+                        foreach (var @object in key.Value)
                         {
-                            file.WriteLine(key.Key + o.ToCSVString());
+                            if (key.Key == "ItemHelpData")
+                            {
+                                var itemHelpData = @object as ItemHelpData;
+                                file.WriteLine(key.Key + itemHelpData.ToCSVString());
+                            }
+                            else if (key.Key == "CompHelpData")
+                            {
+                                var compHelpData = @object as CompHelpData;
+                                file.WriteLine(key.Key + compHelpData.ToCSVString());
+                            }
                         }
+                    }
+                }
 
-                        file.WriteLine(string.Empty);
+                if (this.unhandledObjects.Count > 0)
+                {
+                    // we list each object
+                    foreach (var key in this.unhandledObjects)
+                    {
+                        foreach (var unhandledObject in key.Value)
+                        {
+                            file.WriteLine(key.Key + unhandledObject.ToCSVString());
+                        }
                     }
                 }
 
@@ -273,43 +375,48 @@ namespace ToCSIII_TBLConverter
                     writer.Write(ushort.MinValue);
                 }
 
-                if (this.items.Count > 0)
+                // Write object list
+                foreach (var key in this.objects)
                 {
-                    // Write object list
-                    foreach (var key in this.items)
+                    foreach (var @object in key.Value)
                     {
-                        foreach (var item in key.Value)
+                        writer.Write(UTF8Encoding.UTF8.GetBytes(key.Key + "\0"));
+
+                        if (key.Key == "item")
                         {
-                            writer.Write(UTF8Encoding.UTF8.GetBytes(key.Key + "\0"));
+                            var item = @object as Item;
                             writer.Write(item.ToByteArray());
                         }
-                    }
-                }
-
-                if (this.magics.Count > 0)
-                {
-                    // Write object list
-                    foreach (var key in this.magics)
-                    {
-                        foreach (var m in key.Value)
+                        else if (key.Key == "item_q")
                         {
-                            writer.Write(UTF8Encoding.UTF8.GetBytes(key.Key + "\0"));
-                            writer.Write(m.ToByteArray());
+                            var itemQuartz = @object as ItemQuartz;
+                            writer.Write(itemQuartz.ToByteArray());
+                        }
+                        else if (key.Key == "magic")
+                        {
+                            var magic = @object as Magic;
+                            writer.Write(magic.ToByteArray());
+                        }
+                        else if (key.Key == "ItemHelpData")
+                        {
+                            var itemHelpData = @object as ItemHelpData;
+                            writer.Write(itemHelpData.ToByteArray());
+                        }
+                        else if (key.Key == "CompHelpData")
+                        {
+                            var compHelpData = @object as CompHelpData;
+                            writer.Write(compHelpData.ToByteArray());
                         }
                     }
                 }
                 
-                if (this.objects.Count > 0)
+                foreach (var key in this.unhandledObjects)
                 {
-                    // Write object list
-                    foreach (var key in this.objects)
+                    foreach (var @object in key.Value)
                     {
-                        foreach (var o in key.Value)
-                        {
-                            writer.Write(UTF8Encoding.UTF8.GetBytes(key.Key + "\0"));
-                            writer.Write((short)o.ToByteArray().Length);
-                            writer.Write(o.ToByteArray());
-                        }
+                        writer.Write(UTF8Encoding.UTF8.GetBytes(key.Key + "\0"));
+                        writer.Write((short)@object.ToByteArray().Length);
+                        writer.Write(@object.ToByteArray());
                     }
                 }
 

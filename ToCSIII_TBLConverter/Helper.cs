@@ -101,7 +101,18 @@ namespace ToCSIII_TBLConverter
         }
 
         /// <summary>
-        /// Generate the magic and magic, magicbo and btcalc header in a CSV formatted string.
+        /// Generate the header for Item and Comp HelpData in a CSV formatted string.
+        /// </summary>
+        /// <returns>The header.</returns>
+        public static string GetHelpDataHeader()
+        {
+            string header = "Type,ID,Desc,Unknows";
+
+            return header;
+        }
+
+        /// <summary>
+        /// Generate the magic and magic header in a CSV formatted string.
         /// </summary>
         /// <returns>The header.</returns>
         public static string GetMagicHeader()

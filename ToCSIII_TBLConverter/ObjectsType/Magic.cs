@@ -7,17 +7,14 @@
 namespace ToCSIII_TBLConverter
 {
     using System;
-    using System.Collections.Generic;
     using System.IO;
-    using System.Linq;
     using System.Text;
 
     /// <summary>
-    /// Provide the structure and some utilities for the 'magic', 'magicbo' and 'btcalc' objects.
+    /// Provide the structure and some utilities for the 'magic' objects.
     /// </summary>
-    public class Magic
+    public class Magic : ToCSIII_TBLConverter.Object
     {
-        private short id;
         private short characterRestriction;
         private string flags;
         private byte category;
@@ -39,10 +36,40 @@ namespace ToCSIII_TBLConverter
         private short breakValue;
         private byte level;
         private byte order;
-        private byte unknowByte2;
+        private byte unknowByte1;
         private string animation;
         private string name;
-        private string desc;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Magic"/> class.
+        /// </summary>
+        public Magic() : base()
+        {
+            this.characterRestriction = 0;
+            this.flags = string.Empty;
+            this.category = 0;
+            this.type = 0;
+            this.element = 0;
+            this.switchable = 0;
+            this.targetType = 0;
+            this.targetRange = 0.0f;
+            this.targetSize = 0;
+            this.unknowShort1 = 0;
+            this.unknowShort2 = 0;
+            this.unknowFloat1 = 0.0f;
+            this.unknowFloat2 = 0.0f;
+            this.effects = new Effect[Helper.MaxItemEffects];
+            this.castTime = 0;
+            this.delay = 0;
+            this.cost = 0;
+            this.unbalance = 0;
+            this.breakValue = 0;
+            this.level = 0;
+            this.order = 0;
+            this.unknowByte1 = 0;
+            this.animation = string.Empty;
+            this.name = string.Empty;
+        }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Magic"/> class.
@@ -81,7 +108,7 @@ namespace ToCSIII_TBLConverter
                 this.breakValue = br.ReadInt16();
                 this.level = br.ReadByte();
                 this.order = br.ReadByte();
-                this.unknowByte2 = br.ReadByte();
+                this.unknowByte1 = br.ReadByte();
 
                 this.animation = Helper.ReadNullTerminatedString(br);
                 this.name = Helper.ReadNullTerminatedString(br);
@@ -125,7 +152,7 @@ namespace ToCSIII_TBLConverter
             this.breakValue = short.Parse(t_string[39]);
             this.level = byte.Parse(t_string[40]);
             this.order = byte.Parse(t_string[41]);
-            this.unknowByte2 = byte.Parse(t_string[42]);
+            this.unknowByte1 = byte.Parse(t_string[42]);
 
             this.animation = t_string[43].Replace("\\n", "\n");
             this.name = t_string[44].Replace("\\n", "\n");
@@ -136,7 +163,7 @@ namespace ToCSIII_TBLConverter
         /// Write the current Magic to a CSV formatted string.
         /// </summary>
         /// <returns>The CSV formatted string.</returns>
-        public string ToCSVString()
+        public override string ToCSVString()
         {
             string line = string.Empty;
 
@@ -167,7 +194,7 @@ namespace ToCSIII_TBLConverter
             line += "," + this.breakValue.ToString();
             line += "," + this.level.ToString();
             line += "," + this.order.ToString();
-            line += "," + this.unknowByte2.ToString();
+            line += "," + this.unknowByte1.ToString();
 
             line += "," + '"' + this.animation + '"';
             line += "," + '"' + this.name + '"';
@@ -180,7 +207,7 @@ namespace ToCSIII_TBLConverter
         /// Write the current Item to an array of bytes.
         /// </summary>
         /// <returns>The CSV formatted string.</returns>
-        public byte[] ToByteArray()
+        public override byte[] ToByteArray()
         {
             byte[] array = new byte[23947];
 
@@ -216,7 +243,7 @@ namespace ToCSIII_TBLConverter
                     writer.Write(this.breakValue);
                     writer.Write(this.level);
                     writer.Write(this.order);
-                    writer.Write(this.unknowByte2);
+                    writer.Write(this.unknowByte1);
                     writer.Write(UTF8Encoding.UTF8.GetBytes(this.animation + "\0"));
                     writer.Write(UTF8Encoding.UTF8.GetBytes(this.name + "\0"));
                     writer.Write(UTF8Encoding.UTF8.GetBytes(this.desc + "\0"));
